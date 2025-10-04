@@ -1,4 +1,4 @@
-# Prometheus Alert Manager Route Generator
+# Prometheus Alertmanager Route Generator
 
 
 ## Building
