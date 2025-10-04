@@ -15,18 +15,17 @@ type EmailConfig struct {
 }
 
 type WebhookConfig struct {
-        Url string `yaml:"url"`
+	Url string `yaml:"url"`
 }
 
 type Receiver struct {
-        Name           string          `yaml:"name"`
+	Name           string          `yaml:"name"`
 	EmailConfigs   []EmailConfig   `yaml:"email_configs,omitempty"`
 	WebhookConfigs []WebhookConfig `yaml:"webhook_configs,omitempty"`
 }
 
 type Receivers struct {
-        Receivers []Receiver `yaml:"receivers"`
-
+	Receivers []Receiver `yaml:"receivers"`
 }
 
 type Route struct {
@@ -35,8 +34,7 @@ type Route struct {
 }
 
 type Routes struct {
-        Routes []Route `yaml:"routes"`
-
+	Routes []Route `yaml:"routes"`
 }
 
 type RootRoute struct {
@@ -45,12 +43,12 @@ type RootRoute struct {
 	GroupInterval  string   `yaml:"group_interval,omitempty"`
 	RepeatInterval string   `yaml:"repeat_interval,omitempty"`
 	Receiver       string   `yaml:"receiver"`
-	Routes	       []Route  `yaml:"routes"`
+	Routes         []Route  `yaml:"routes"`
 }
 
 type Service struct {
 	Owner        string `yaml:"owner"`
-        ContactEmail string `yaml:"contact_email,omitempty"`
+	ContactEmail string `yaml:"contact_email,omitempty"`
 	ContactChat  string `yaml:"contact_chat,omitempty"`
 	AlertEmail   string `yaml:"alert_email,omitempty"`
 	AlertChat    string `yaml:"alert_chat,omitempty"`
@@ -59,7 +57,6 @@ type Service struct {
 type Services struct {
 	Services map[string]Service `yaml:"services"`
 }
-
 
 func main() {
 
@@ -87,13 +84,13 @@ func main() {
 	routes.generateRoutes(services)
 
 	if err := generateReceiversFile(routesDirectory, alertReceiversFile, &receivers); err != nil {
-                        log.Fatal(err)
-			return
-        }
+		log.Fatal(err)
+		return
+	}
 	if err := generateRoutesFile(routesDirectory, alertRoutesFile, &routes); err != nil {
-                        log.Fatal(err)
-                        return
-        }
+		log.Fatal(err)
+		return
+	}
 }
 
 func getUrlForChat(c string) string {
@@ -101,53 +98,52 @@ func getUrlForChat(c string) string {
 	return ("https://some-url.com?chat=" + c)
 }
 
-
 func (r *Receivers) generateReceivers(orphanAlertEmail string, services Services) *Receivers {
 
 	for service, serviceData := range services.Services {
-	  if len(serviceData.AlertEmail) > 0 {
+		if len(serviceData.AlertEmail) > 0 {
 
-		  r.Receivers = append(r.Receivers, Receiver{
-			  Name: "email:" + service,
-			  EmailConfigs: []EmailConfig{
-				  EmailConfig{
-					  SendResolved: true,
-					  To: serviceData.AlertEmail}}})
-	  }
-	  if len(serviceData.AlertChat) > 0 {
-		  r.Receivers = append(r.Receivers, Receiver{
-			  Name: "chat:" + service,
-                          WebhookConfigs: []WebhookConfig{
-                                  WebhookConfig{
-                                          Url: getUrlForChat(
-						  serviceData.AlertChat)}}})
-          }
+			r.Receivers = append(r.Receivers, Receiver{
+				Name: "email:" + service,
+				EmailConfigs: []EmailConfig{
+					EmailConfig{
+						SendResolved: true,
+						To:           serviceData.AlertEmail}}})
+		}
+		if len(serviceData.AlertChat) > 0 {
+			r.Receivers = append(r.Receivers, Receiver{
+				Name: "chat:" + service,
+				WebhookConfigs: []WebhookConfig{
+					WebhookConfig{
+						Url: getUrlForChat(
+							serviceData.AlertChat)}}})
+		}
 	}
 
 	r.Receivers = append(r.Receivers, Receiver{Name: "email:default-receiver",
-                  EmailConfigs: []EmailConfig{
-			  EmailConfig{
-				  SendResolved: true,
-                                  To: orphanAlertEmail}}})
+		EmailConfigs: []EmailConfig{
+			EmailConfig{
+				SendResolved: true,
+				To:           orphanAlertEmail}}})
 	return r
 }
 
 func (r *Routes) generateRoutes(services Services) *Routes {
 
-        for service, serviceData := range services.Services {
-          if len(serviceData.AlertEmail) > 0 {
-                  r.Routes = append(r.Routes, Route{
-                          Matchers: []string{"service=\"" + service + "\""},
-			  Receiver: "email:" + service})
-          }
-          if len(serviceData.AlertChat) > 0 {
-                  r.Routes = append(r.Routes, Route{
-                          Matchers: []string{"service=\"" + service + "\""},
-			  Receiver: "chat:" + service})
-          }
+	for service, serviceData := range services.Services {
+		if len(serviceData.AlertEmail) > 0 {
+			r.Routes = append(r.Routes, Route{
+				Matchers: []string{"service=\"" + service + "\""},
+				Receiver: "email:" + service})
+		}
+		if len(serviceData.AlertChat) > 0 {
+			r.Routes = append(r.Routes, Route{
+				Matchers: []string{"service=\"" + service + "\""},
+				Receiver: "chat:" + service})
+		}
 
-        }
-        return r
+	}
+	return r
 }
 
 func (s *Services) getConf(servicesFile string) *Services {
@@ -169,42 +165,42 @@ func (s *Services) getConf(servicesFile string) *Services {
 }
 
 func generateReceiversFile(outputDir string, filename string, receivers *Receivers) error {
-        if err := os.MkdirAll(outputDir, 0777); err != nil {
-                return err
-        }
+	if err := os.MkdirAll(outputDir, 0777); err != nil {
+		return err
+	}
 
-        alertConfig, err := yaml.Marshal(receivers)
-        if err != nil {
-                return err
-        }
+	alertConfig, err := yaml.Marshal(receivers)
+	if err != nil {
+		return err
+	}
 
-        if err := os.WriteFile(filepath.Join(outputDir, filename), alertConfig, 0666); err != nil {
-                return err
-        }
+	if err := os.WriteFile(filepath.Join(outputDir, filename), alertConfig, 0666); err != nil {
+		return err
+	}
 
-        return nil
+	return nil
 }
 
 func generateRoutesFile(outputDir string, filename string, routes *Routes) error {
-        if err := os.MkdirAll(outputDir, 0777); err != nil {
-                return err
-        }
+	if err := os.MkdirAll(outputDir, 0777); err != nil {
+		return err
+	}
 	alertConfig, err := yaml.Marshal(map[string]RootRoute{
 		"route": RootRoute{
-		GroupBy: []string{"alertname"},
-		GroupWait: "30s",
-		GroupInterval: "5m",
-		RepeatInterval: "1h",
-		Receiver: "email:default-receiver",
-		Routes: routes.Routes}})
+			GroupBy:        []string{"alertname"},
+			GroupWait:      "30s",
+			GroupInterval:  "5m",
+			RepeatInterval: "1h",
+			Receiver:       "email:default-receiver",
+			Routes:         routes.Routes}})
 
-        if err != nil {
-                return err
-        }
+	if err != nil {
+		return err
+	}
 
-        if err := os.WriteFile(filepath.Join(outputDir, filename), alertConfig, 0666); err != nil {
-                return err
-        }
+	if err := os.WriteFile(filepath.Join(outputDir, filename), alertConfig, 0666); err != nil {
+		return err
+	}
 
-        return nil
+	return nil
 }
