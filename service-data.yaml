@@ -1,0 +1,15 @@
+---
+services:
+  test-service:
+    owner: "team1"
+    contact_email: user1@example.com
+#   contact_chat: '#contact-room1'
+    alert_email: user1-alerting@example.com
+#   alert_chat: '#alert-room1'
+  test-service1:
+    owner: "team2"
+    contact_email: user2@example.com
+#   contact_chat: '#contact-room2'
+    alert_email: user2-alerting@example.com
+#   alert_chat: '#alert-room2'
+
