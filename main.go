@@ -8,6 +8,14 @@ import (
 	"path/filepath"
 )
 
+type TlsConfig struct {
+	InsecureSkipVerify bool `yaml:"insecure_skip_verify"`
+}
+
+type HttpConfig struct {
+	TlsConfig TlsConfig `yaml:"tls_config"`
+}
+
 type EmailConfig struct {
 	SendResolved bool   `yaml:"send_resolved"`
 	From         string `yaml:"from,omitempty"`
@@ -15,7 +23,9 @@ type EmailConfig struct {
 }
 
 type WebhookConfig struct {
-	Url string `yaml:"url"`
+	Url          string     `yaml:"url"`
+	SendResolved bool       `yaml:"send_resolved"`
+	HttpConfig   HttpConfig `yaml:"http_config"`
 }
 
 type Receiver struct {
@@ -47,11 +57,12 @@ type RootRoute struct {
 }
 
 type Service struct {
-	Owner        string `yaml:"owner"`
-	ContactEmail string `yaml:"contact_email,omitempty"`
-	ContactChat  string `yaml:"contact_chat,omitempty"`
-	AlertEmail   string `yaml:"alert_email,omitempty"`
-	AlertChat    string `yaml:"alert_chat,omitempty"`
+	Owner              string `yaml:"owner"`
+	ContactEmail       string `yaml:"contact_email,omitempty"`
+	ContactChat        string `yaml:"contact_chat,omitempty"`
+	AlertEmail         string `yaml:"alert_email,omitempty"`
+	WebhookUrl         string `yaml:"webhook_url,omitempty"`
+	InsecureSkipVerify bool   `yaml:"insecure_skip_verify,omitempty"`
 }
 
 type Services struct {
@@ -93,9 +104,9 @@ func main() {
 	}
 }
 
-func getUrlForChat(c string) string {
+func getUrl(c string) string {
 	//TODO
-	return ("https://some-url.com?chat=" + c)
+	return (c)
 }
 
 func (r *Receivers) generateReceivers(orphanAlertEmail string, services Services) *Receivers {
@@ -110,13 +121,17 @@ func (r *Receivers) generateReceivers(orphanAlertEmail string, services Services
 						SendResolved: true,
 						To:           serviceData.AlertEmail}}})
 		}
-		if len(serviceData.AlertChat) > 0 {
+		if len(serviceData.WebhookUrl) > 0 {
 			r.Receivers = append(r.Receivers, Receiver{
-				Name: "chat:" + service,
+				Name: "webhook:" + service,
 				WebhookConfigs: []WebhookConfig{
 					WebhookConfig{
-						Url: getUrlForChat(
-							serviceData.AlertChat)}}})
+						Url: getUrl(
+							serviceData.WebhookUrl),
+						SendResolved: true,
+						HttpConfig: HttpConfig{
+							TlsConfig: TlsConfig{
+								InsecureSkipVerify: serviceData.InsecureSkipVerify}}}}})
 		}
 	}
 
@@ -136,10 +151,10 @@ func (r *Routes) generateRoutes(services Services) *Routes {
 				Matchers: []string{"service=\"" + service + "\""},
 				Receiver: "email:" + service})
 		}
-		if len(serviceData.AlertChat) > 0 {
+		if len(serviceData.WebhookUrl) > 0 {
 			r.Routes = append(r.Routes, Route{
 				Matchers: []string{"service=\"" + service + "\""},
-				Receiver: "chat:" + service})
+				Receiver: "webhook:" + service})
 		}
 
 	}
