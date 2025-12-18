@@ -41,6 +41,7 @@ type Receivers struct {
 type Route struct {
 	Matchers []string `yaml:"matchers"`
 	Receiver string   `yaml:"receiver"`
+	Continue bool     `yaml:"continue,omitempty"`
 }
 
 type Routes struct {
@@ -149,14 +150,14 @@ func (r *Routes) generateRoutes(services Services) *Routes {
 		if len(serviceData.AlertEmail) > 0 {
 			r.Routes = append(r.Routes, Route{
 				Matchers: []string{"service=\"" + service + "\""},
-				Receiver: "email:" + service})
+				Receiver: "email:" + service,
+				Continue: len(serviceData.WebhookUrl) > 0})
 		}
 		if len(serviceData.WebhookUrl) > 0 {
 			r.Routes = append(r.Routes, Route{
 				Matchers: []string{"service=\"" + service + "\""},
 				Receiver: "webhook:" + service})
 		}
-
 	}
 	return r
 }
